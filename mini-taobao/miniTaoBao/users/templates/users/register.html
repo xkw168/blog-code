@@ -1,0 +1,11 @@
+{% extends "users/base.html" %}
+{% block content %}
+    <form method="POST">
+        {% csrf_token %}
+        <fieldset>
+            <legend>Join Today</legend>
+            {{ form.as_p }}
+        </fieldset>
+        <button class="btn btn-outline-info" type="submit">Sign Up</button>
+    </form>
+{% endblock content %}

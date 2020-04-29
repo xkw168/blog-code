@@ -1,0 +1,23 @@
+{% extends "users/base.html" %}
+{% block content %}
+    <h1>Hello world</h1>
+    {% if profiles %}
+        <ul>
+            <h2>User list</h2>
+            {% for p in profiles %}
+                <li>{{ p.user.username }}</li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <h2>No user yet.</h2>
+    {% endif %}
+    {% if user.is_authenticated %}
+        <a href="{% url "logout" %}">Logout</a>
+        <br>
+        <a href="{% url "profile" %}">Profile</a>
+    {% else %}
+        <a href="{% url "register" %}">Register</a>
+        <br>
+        <a href="{% url "login" %}">Login</a>
+    {% endif %}
+{% endblock %}
