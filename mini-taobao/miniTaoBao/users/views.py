@@ -1,17 +1,9 @@
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect
-from django.http import HttpResponse
 # Create your views here.
 from django.urls import reverse
 
 from .forms import UserRegisterForm
-from .models import Profile
-
-
-def home(request):
-    profiles = Profile.objects.all()
-    context = {"profiles": profiles}
-    return render(request, 'users/home.html', context)
 
 
 def register(request):
