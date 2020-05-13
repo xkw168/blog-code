@@ -38,7 +38,7 @@
                 <ul class="navbar-nav">
                     {% if user.is_authenticated %}
                         <li class="nav-item">
-                            <a class="nav-item nav-link" href="#">
+                            <a class="nav-item nav-link" href="{% url 'shop_cart' %}">
                                 <i class="fa fa-shopping-cart"></i>
                             </a>
                         </li>
@@ -84,6 +84,9 @@
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"
         integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6"
         crossorigin="anonymous"></script>
+
+<!-- jQuery library -->
+<script src="{% static "js/jquery-3.5.0.min.js" %}"></script>
 
 {% block script %}
 {% endblock %}

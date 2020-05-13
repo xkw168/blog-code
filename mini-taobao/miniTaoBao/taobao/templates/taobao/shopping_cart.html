@@ -1,0 +1,224 @@
+{% extends "users/base.html" %}
+{% block content %}
+    <h1>购物车</h1>
+    <!-- order list -->
+    {% if orders %}
+        <!-- NOTE: nested form is not allowed!!! -->
+        <form id="form_orders" name="form_orders" action="{% url 'shop_cart' %}" method="post">
+            {% csrf_token %}
+            <div class="table-responsive mt-4 table-hover">
+                <table id="order_table" class="table">
+                    <thead>
+                    <tr class="row text-center">
+                        <th class="col-1">
+                            <input class="form-check-input" type="checkbox" id="check_all">
+                            <label class="form-check-label" for="check_all">#</label>
+                        </th>
+                        <!-- thumbnail + description -->
+                        <th class="col-3 text-left">
+                            <a href="#" style="color: #080000;">商品
+                                <i class="fa fa-sort"></i>
+                            </a>
+                        </th>
+                        <th class="col-2">
+                            <a href="#" style="color: #080000;">数量
+                                <i class="fa fa-sort"></i>
+                            </a>
+                        </th>
+                        <th class="col-2">
+                            <a href="#" style="color: #080000;">价格
+                                <i class="fa fa-sort"></i>
+                            </a>
+                        </th>
+                        <th class="col-2">
+                            <a href="#" style="color: #080000;">总计
+                                <i class="fa fa-sort"></i>
+                            </a>
+                        </th>
+                        <!-- delete button -->
+                        <th class="col-2"></th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for order in orders %}
+                        <tr class="row text-center border-bottom">
+                            <td class="col-1 align-self-center border-top-0">
+                                <input class="form-check-input" type="checkbox" value="{{ order.id }}"
+                                       name="checked_orders" id="checkbox{{ order.id }}">
+                                <label class="form-check-label"
+                                       for="checkbox{{ order.id }}"> {{ forloop.counter }}</label>
+                            </td>
+                            <td class="col-3 text-left border-top-0">
+                                <img class="img-thumbnail" style="width: 50px; height: 50px" src="{{ order.item.img }}">
+                                {{ order.item.description }}
+                            </td>
+                            <td class="col-2 align-self-center border-top-0">
+                                <button type="button" class="btn" onclick="change_cnt({{ order.id }}, false)">
+                                    <i class="fa fa-minus-square-o"></i>
+                                </button>
+                                <span id="cnt{{ order.id }}">{{ order.item_cnt }}</span>
+                                <button type="button" class="btn" onclick="change_cnt({{ order.id }}, true)">
+                                    <i class="fa fa-plus-square-o"></i>
+                                </button>
+                            </td>
+                            <td class="col-2 align-self-center border-top-0">
+                                &dollar; {{ order.item.price|floatformat:2 }}</td>
+                            <td class="col-2 align-self-center border-top-0">
+                                &dollar;
+                                <span id="total_order{{ order.id }}">{{ order.total|floatformat:2 }}</span>
+                            </td>
+                            <td class="col-2 align-self-center border-top-0">
+                                <button onclick="delete_order({{ order.id }})" class="btn btn-outline-secondary">
+                                    删除
+                                </button>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <!-- total price -->
+            <div class="row">
+                <div class="col-5 offset-7 text-right mt-4 mb-4">
+                    <b>总计(所有选中商品): </b>
+                    <span style="color: red">&dollar;</span>
+                    <span id="total_cart" style="color: red">{{ total|floatformat:2 }}</span>
+                </div>
+            </div>
+            <div class="text-right">
+                <button onclick="check_out()" class="btn btn-primary"><i class="fa fa-dollar"></i> 结算</button>
+            </div>
+        </form>
+    {% else %}
+        <h4 class="m-4">这里空空如也,
+            <a href="{% url 'home' %}">去买点什么吧。</a>
+        </h4>
+    {% endif %}
+{% endblock content %}
+
+<!-- javascript -->
+{% block script %}
+    <!-- jQiery table sorter plugin -->
+    {% load static %}
+    <script src="{% static "js/jquery.tablesorter.js" %}"></script>
+
+    <script type="text/javascript">
+        function delete_order(order_id) {
+            add_operation_type(document.form_orders, "delete")
+            const id_field = document.createElement("input")
+            id_field.type = "hidden"
+            id_field.name = "order_id"
+            id_field.value = order_id
+            document.form_orders.appendChild(id_field)
+            document.form_orders.submit();
+        }
+
+        function check_out() {
+            add_operation_type(document.form_orders, "checkout")
+            document.form_orders.submit()
+        }
+
+        function add_operation_type(element, type) {
+            const operation_field = document.createElement("input");
+            operation_field.type = "hidden"
+            operation_field.name = "operation"
+            operation_field.value = type
+            element.appendChild(operation_field)
+        }
+
+        function change_cnt(id, isAdd) {
+            let opera;
+            if (isAdd) {
+                opera = "add";
+            } else {
+                opera = "minus";
+            }
+            const total = $("#total_cart").text();
+            // use ajax to communicate with backend, change the count of specific order
+            const config = {
+                "url": "{% url "change_cnt" %}",
+                "async": true,
+                "type": "post",
+                "dataType": "json",
+                "data": {
+                    "order_id": id,
+                    "operation": opera,
+                    "total_cart": total,
+                    "csrfmiddlewaretoken": "{{ csrf_token }}"
+                },
+                "success": function (result) {
+                    $("#total_order" + id).text(result["total_order"]);
+                    $("#cnt" + id).text(result["cnt"]);
+                    // only update the total price if this order is checked
+                    if ($("#checkbox" + id).is(":checked")) {
+                        $("#total_cart").text(result["total_cart"]);
+                    }
+                },
+                "error": function (xhr, status, error) {
+
+                }
+            };
+            $.ajax(config);
+        }
+
+        $("#check_all").on("click", function () {
+            if (this.checked) {
+                // use "prop" to set the value of all checkboxes
+                $(":checkbox").prop("checked", true);
+            } else {
+                $(":checkbox").prop("checked", false);
+            }
+            // refresh total price
+            cal_total();
+        });
+
+        const checkboxes = $("input[name='checked_orders']");
+        checkboxes.on("click", function () {
+            if (this.checked) {
+                let i = 0;
+                for (i = 0; i < checkboxes.length; i++) {
+                    if (!checkboxes[i].checked) {
+                        break;
+                    }
+                }
+                if (i === checkboxes.length) {
+                    $("#check_all").prop("checked", true);
+                }
+            } else {
+                $("#check_all").prop("checked", false);
+            }
+            // refresh total price
+            cal_total();
+        });
+
+        // this function will be called once the page is loaded
+        $(function () {
+            $(":checkbox").prop("checked", true);
+            cal_total();
+            $("#order_table").tablesorter({
+                headers: {
+                    0: {sorter: false}
+                }
+            });
+        })
+
+        // calculate the total price
+        function cal_total() {
+            add_operation_type(document.form_orders, "cal_total")
+            const config = {
+                "url": "{% url "shop_cart" %}",
+                "async": true,
+                "type": "post",
+                "dataType": "json",
+                "data": $("#form_orders").serialize(),
+                "success": function (result) {
+                    $("#total_cart").text(result["total_cart"]);
+                },
+                "error": function (xhr, status, error) {
+
+                }
+             };
+            $.ajax(config);
+        }
+    </script>
+{% endblock script %}
